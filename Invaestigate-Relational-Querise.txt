@@ -1,0 +1,114 @@
+/* Query 1 - query used for first insight*/
+
+SELECT  
+     Category_name,
+     COUNT(*) AS Rental_Count
+
+FROM(
+    SELECT
+         F.film_id AS FilmID,
+	 F.title AS Film_Title,
+         Categ.name AS Category_name,
+         R.inventory_id,
+	 R.rental_id AS RentalID
+    FROM 
+        Film F
+	JOIN film_category FG ON F.film_id=FG.film_id
+	JOIN category Categ ON FG.category_id = Categ.category_id
+	JOIN inventory I ON F.film_id= I.film_id
+	JOIN rental R ON I.inventory_id = R.inventory_id	
+     WHERE 
+         Categ.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family','Music'))SubQoury				
+	       	
+                
+     GROUP BY 
+          1
+     ORDER BY
+          1; 
+
+/* Query 2 - query used for second insight*/
+
+WITH Temp_Table AS (
+
+     SELECT 
+	    COUNT(Film.title) AS Count_MovperCategory,
+	    Categ.name, 
+	    Film.rental_duration AS rental_duration
+     FROM 
+        film Film
+        JOIN film_category FG ON Film.film_id = FG.film_id 
+        JOIN category Categ ON FG.category_id = Categ.category_id
+     WHERE 
+        Categ.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family','Music')
+ GROUP BY
+       2,
+       3
+  ORDER BY
+      3)
+
+	
+SELECT 
+	*,
+        NTILE(4) OVER (ORDER BY rental_duration) AS Standard_Quartile FROM Temp_Table;
+
+
+  
+	
+	
+	
+
+/* Query 3 - query used for third insight*/
+
+WITH Temp_Table AS (
+
+   SELECT 
+	 NTILE(4) OVER (ORDER BY Film.rental_duration) AS Standard_Quartile,
+	 Categ.name AS Category_name
+	     
+   FROM 
+      film Film
+      JOIN film_category FG ON Film.film_id = FG.film_id 
+      JOIN category Categ ON FG.category_id = Categ.category_id
+      WHERE 
+          Categ.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family','Music'))
+
+	
+SELECT 	
+     Category_name,
+     Standard_Quartile,
+
+    CASE 
+	  WHEN Category_name = 'Animation' THEN count(*)
+	  WHEN Category_name = 'Children' THEN count(*)
+	  WHEN Category_name = 'Classics' THEN count(*)
+	  WHEN Category_name = 'Comedy' THEN count(*)
+	  WHEN Category_name = 'Family' THEN count(*)
+	  ELSE count(*) END AS Count_Of_Movies
+	  FROM
+            Temp_Table
+	  GROUP BY 
+               1,
+               2
+	  ORDER BY 
+               1,
+               2;
+  
+
+/* Query 4 - query used for fourth insight*/
+
+  SELECT 
+      DATE_PART('month',RT.rental_date) AS Rental_Month,
+	  DATE_PART('year',RT.rental_date) AS Rental_Year,
+	  ST.store_id AS Sotre_ID,
+	  COUNT(DATE_PART('month',RT.rental_date)) AS Count_Rentals
+  FROM 
+     rental RT
+	  JOIN staff SF ON RT.staff_id = SF.staff_id
+	  JOIN store ST ON SF.store_id = ST.store_id 
+  GROUP BY 
+          1,
+          2,
+          3
+  ORDER BY
+         4 DESC;
+
